@@ -10,7 +10,7 @@ import {error} from "@angular/compiler-cli/src/transformers/util";
 describe('UserService', () => {
   let service: UserService;
   let http: HttpTestingController;
-  const apiUrl = "api/user/";
+  const apiUrl = "api/user";
   const userMock: User = {
     id: 1,
     email: 'john.doe@example.com',
@@ -37,34 +37,30 @@ describe('UserService', () => {
   });
 
 
-  describe('GetUserById', () => {
-    it('should return user', () => {
-      const id = "1";
-      service.getById(id).subscribe((response) => {
-        expect(response).toEqual(userMock)
-      })
-      const req = http.expectOne({
-        method: 'GET',
-        url: apiUrl + id,
-      });
-      req.flush(userMock);
+  it('should return user', () => {
+    const id = "1";
+    service.getById(id).subscribe((response) => {
+      expect(response).toEqual(userMock)
     })
+    const req = http.expectOne({
+      method: 'GET',
+      url: `${apiUrl}/${id}`,
+    });
+    req.flush(userMock);
   })
 
-  describe('DeleteUser', () => {
-    it('should delete user', () => {
-      const id = "1";
-      service.delete(id).subscribe((response) => {
-        expect(response).toBeTruthy()
-      })
-
-      const req = http.expectOne({
-        method: 'DELETE',
-        url: apiUrl + id,
-      });
-
-      expect(req.request.method).toBe('DELETE');
-      req.flush(null);
+  it('should delete user', () => {
+    const id = "1";
+    service.delete(id).subscribe((response) => {
+      expect(response).toBeTruthy()
     })
+
+    const req = http.expectOne({
+      method: 'DELETE',
+      url: `${apiUrl}/${id}`,
+    });
+
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
   })
 });
