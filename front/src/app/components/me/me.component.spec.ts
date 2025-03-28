@@ -6,8 +6,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { SessionService } from 'src/app/services/session.service';
+import { expect } from '@jest/globals';
 
 import { MeComponent } from './me.component';
+
 
 describe('MeComponent', () => {
   let component: MeComponent;
@@ -42,4 +44,14 @@ describe('MeComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should check if user is defined', () => {
+    expect(component.user).toBeUndefined();
+  })
+
+  it('should call window history back method', () => {
+    const historyBackSpy = jest.spyOn(window.history, 'back');
+    component.back()
+    expect(historyBackSpy).toHaveBeenCalled();
+  })
 });
