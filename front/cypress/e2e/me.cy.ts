@@ -16,7 +16,7 @@ describe('Me spec', () => {
       }
     })
 
-    cy.login()
+    cy.loginUser()
 
     cy.contains('span.link', 'Account').should('be.visible')
     cy.contains('span.link', 'Account').click()
@@ -47,7 +47,7 @@ describe('Me spec', () => {
       }
     })
 
-    cy.login()
+    cy.loginAdmin()
 
     cy.contains('span.link', 'Account').should('be.visible')
     cy.contains('span.link', 'Account').click()
