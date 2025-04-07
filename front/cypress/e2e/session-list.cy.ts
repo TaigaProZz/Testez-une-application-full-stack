@@ -102,8 +102,6 @@ describe('Session page spec', () => {
   })
 
   it('update session being logged in', () => {
-    cy.loginUser()
-
     cy.intercept('GET', '/api/teacher', {
       statusCode: 200,
       body: [
@@ -111,22 +109,6 @@ describe('Session page spec', () => {
           id: 1,
           firstName: "first name",
           lastName: "last name",
-          createdAt: new Date(2000, 11, 20),
-          updatedAt: new Date(2000, 11, 20)
-        }
-      ]
-    })
-
-    cy.intercept('GET', '/api/session', {
-      statusCode: 200,
-      body: [
-        {
-          id: 1,
-          name: "session name",
-          description: "a",
-          date: new Date(2000, 11, 20),
-          teacher_id: 1,
-          users: [1, 2],
           createdAt: new Date(2000, 11, 20),
           updatedAt: new Date(2000, 11, 20)
         }
@@ -163,8 +145,12 @@ describe('Session page spec', () => {
       ]
     }).as('updateSession')
 
-    // check redirect to /sessions and click on update button
+
+    // login and check redirect to /sessions and click on update button
+    cy.loginUserWithSessions()
     cy.url().should('include', '/sessions')
+
+
     cy.contains('button', 'Edit').click()
 
     // check title
@@ -206,25 +192,6 @@ describe('Session page spec', () => {
   })
 
   it('delete session being logged in', () => {
-    cy.loginUser()
-
-    cy.intercept('GET', '/api/session', {
-      statusCode: 200,
-      body: [
-        {
-          id: 1,
-          name: "session name",
-          description: "a",
-          date: new Date(2000, 11, 20),
-          teacher_id: 1,
-          users: [1, 2],
-          createdAt: new Date(2000, 11, 20),
-          updatedAt: new Date(2000, 11, 20)
-        }
-      ]
-    })
-
-
     cy.intercept('GET', '/api/session/1', {
       statusCode: 200,
       body: {
@@ -244,7 +211,10 @@ describe('Session page spec', () => {
       body: {}
     }).as('deleteSession')
 
-    // check redirect to /sessions and click on delete button
+
+
+    // login and check redirect to /sessions and click on delete button
+    cy.loginUserWithSessions()
     cy.url().should('include', '/sessions')
 
     cy.contains('button', 'Detail').click()
