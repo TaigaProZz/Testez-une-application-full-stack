@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.mockito.Mockito.*;
 
 
@@ -93,7 +94,7 @@ public class SessionControllerUnitTest {
 
     // Assert
     assertEquals(200, response.getStatusCodeValue());
-    assertEquals(SessionDto.class, response.getBody().getClass());
+    assertInstanceOf(SessionDto.class, response.getBody());
     assertEquals(sessionDto1, response.getBody());
     verify(sessionService, times(1)).getById(1L);
     verify(sessionMapper, times(1)).toDto(sessionId1);
