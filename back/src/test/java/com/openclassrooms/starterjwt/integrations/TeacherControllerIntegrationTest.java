@@ -1,4 +1,4 @@
-package com.openclassrooms.starterjwt.controllers;
+package com.openclassrooms.starterjwt.integrations;
 
 
 import com.jayway.jsonpath.JsonPath;
