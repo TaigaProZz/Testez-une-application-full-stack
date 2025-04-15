@@ -1,104 +1,100 @@
 package com.openclassrooms.starterjwt.integrations;
 
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.openclassrooms.starterjwt.payload.request.LoginRequest;
+import com.openclassrooms.starterjwt.payload.request.SignupRequest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ActiveProfiles("test")
+@Sql(executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD, scripts = "classpath:before-each.sql")
 public class AuthControllerIntegrationTest {
+
   @Autowired
   private MockMvc mockMvc;
 
-  @Test
-  @DisplayName("Test login as user with valid credentials")
-  public void testLoginWithValidCredentials() throws Exception {
-    String requestBody = "{\"email\": \"a@a.a\", \"password\": \"a\"}";
 
-    MvcResult mvcResult = mockMvc.perform(post("/api/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
-            .andExpect(status().isOk())
-            .andReturn();
 
-    // Check if the response contains the expected fields
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("token"));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"username\":\"a@a.a\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"firstName\":\"a\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"lastName\":\"a\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"admin\":false"));
+  private ObjectMapper objectMapper;
+
+  @BeforeEach
+  public void setup() {
+    objectMapper = new ObjectMapper();
   }
 
   @Test
-  @DisplayName("Test login as admin with valid credentials")
-  public void testLoginWithValidAdminCredentials() throws Exception {
-    String requestBody = "{\"email\": \"admin@admin.com\", \"password\": \"a\"}";
+  @DisplayName("Register User but email already taken")
+  public void shouldNotRegisterUser_EmailAlreadyTaken() throws Exception {
+    SignupRequest signupRequest = new SignupRequest();
+    signupRequest.setEmail("a@a.a");
+    signupRequest.setFirstName("FirstName");
+    signupRequest.setLastName("LastName");
+    signupRequest.setPassword("Password");
 
-    MvcResult mvcResult = mockMvc.perform(post("/api/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
-            .andExpect(status().isOk())
-            .andReturn();
-
-    // Check if the response contains the expected fields
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("token"));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"username\":\"admin@admin.com\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"firstName\":\"admin\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"lastName\":\"admin\""));
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("\"admin\":true"));
+    mockMvc.perform(post("/api/auth/register")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(signupRequest)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.message").value("Error: Email is already taken!"));
   }
 
   @Test
-  @DisplayName("Test login with invalid credentials")
-  public void testLoginWithInvalidCredentials() throws Exception {
-    String requestBody = "{\"email\": \"invalid@a.a\", \"password\": \"wrongpassword\"}";
+  @DisplayName("Login User with incorrect Credentials")
+  public void shouldNotAuthenticateUser_IncorrectCredentials() throws Exception {
+    LoginRequest wrongLoginRequest = new LoginRequest();
+    wrongLoginRequest.setEmail("a@a.a");
+    wrongLoginRequest.setPassword("wrongpassword");
 
     mockMvc.perform(post("/api/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(wrongLoginRequest)))
             .andExpect(status().isUnauthorized());
   }
 
   @Test
-  @DisplayName("Test register with valid credentials")
-  public void testRegisterWithValidCredentials() throws Exception {
-    String requestBody = "{\"email\": \"newuser@a.a\", \"password\": \"newpassword\", \"firstName\": \"New\", \"lastName\": \"User\"}";
+  @DisplayName("Register then login User successfully")
+  public void shouldRegisterThenLoginUser() throws Exception {
+    SignupRequest signupRequest = new SignupRequest();
+    signupRequest.setEmail("newemail@gmail.com");
+    signupRequest.setFirstName("FirstName");
+    signupRequest.setLastName("LastName");
+    signupRequest.setPassword("Password");
 
-    MvcResult mvcResult = mockMvc.perform(post("/api/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
-            .andExpect(status().isOk())
-            .andReturn();
 
-    // Check if the response contains the expected fields
-    assertTrue(mvcResult.getResponse().getContentAsString().contains("User registered successfully!"));
-  }
-
-  @Test
-  @DisplayName("Test register with existing email")
-  public void testRegisterWithExistingEmail() throws Exception {
-    String requestBody = "{\"email\": \"a@a.a\", \"password\": \"newpassword\", \"firstName\": \"New\", \"lastName\": \"User\"}";
+    String userJson = objectMapper.writeValueAsString(signupRequest);
 
     mockMvc.perform(post("/api/auth/register")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(requestBody))
-            .andExpect(result -> {
-                String responseBody = result.getResponse().getContentAsString();
-                assertTrue(responseBody.contains("Error: Email is already taken!"));
-            });
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(userJson))
+            .andExpect(status().isOk());
+
+    LoginRequest loginRequest = new LoginRequest();
+    loginRequest.setEmail("newemail@gmail.com");
+    loginRequest.setPassword("Password");
+
+    String loginJson = objectMapper.writeValueAsString(loginRequest);
+
+    mockMvc.perform(post("/api/auth/login")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(loginJson))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.token").isNotEmpty());
   }
+
+
 }
